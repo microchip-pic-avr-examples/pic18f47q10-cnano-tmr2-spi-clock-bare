@@ -23,21 +23,18 @@
  */
 
 #pragma config WDTE = OFF           /* WDT operating mode->WDT Disabled */ 
-#pragma config LVP = ON             /* Low voltage programming enabled, RE3 pin is MCLR */ 
+#pragma config LVP = ON             /* Low voltage programming enabled, RE3 pin is MCLR */
 
 #include <xc.h>
 #include <stdint.h>
 
-#define PPS_CONFIG_RC3_SPI_SCK      0x0F
-#define PPS_CONFIG_RC4_SPI_SDI      0x14
-#define PPS_CONFIG_RC5_SPI_SDO      0x10
-#define Timer2Period                0xC7
+#define Timer2Period       0xC7     /* Set TMR2 period, PR2 to 199 (50us) */
 
-static void CLK_init(void);
-static void PPS_init(void);
-static void PORT_init(void);
-static void TMR2_init(void);
-static void SPI1_init(void);
+static void CLK_Initialize(void);
+static void PPS_Initialize(void);
+static void PORT_Initialize(void);
+static void TMR2_Initialize(void);
+static void SPI1_Initialize(void);
 static void SPI1_slave1Select(void);
 static void SPI1_slave1Deselect(void);
 static void SPI1_slave2Select(void);
@@ -47,100 +44,94 @@ static uint8_t SPI1_exchangeByte(uint8_t data);
 uint8_t writeData = 1;          /* Data that will be transmitted */
 uint8_t receiveData;            /* Data that will be received */
 
-static void CLK_init(void)
+static void CLK_Initialize(void)
 {
-    OSCCON1 = _OSCCON1_NOSC1_MASK 
-            | _OSCCON1_NOSC2_MASK;        /* HFINTOSC Oscillator */
-    OSCFRQ = _OSCFRQ_FRQ1_MASK;           /* HFFRQ 4 MHz */
+    OSCCON1 = 0x60;             /* set HFINTOSC Oscillator */
+    OSCFRQ  = 0x02;             /* set HFFRQ to 4 MHz */
 }
 
-static void PPS_init(void)
-{
-    RC3PPS = PPS_CONFIG_RC3_SPI_SCK;               /* SCK channel on RC3 */
-    SSP1DATPPS = PPS_CONFIG_RC4_SPI_SDI;           /* SDI channel on RC4 */
-    RC5PPS = PPS_CONFIG_RC5_SPI_SDO;               /* SDO channel on RC5 */
+static void PPS_Initialize(void)
+{  
+    RC3PPS = 0x0F;              /* SCK channel on RC3 */
+    SSP1DATPPS = 0x14;          /* SDI channel on RC4 */
+    RC5PPS = 0x10;              /* SDO channel on RC5 */
 }
 
-static void PORT_init(void)
+static void PORT_Initialize(void)
 {
-    /* Set RC6 and RC7 pins as digital */
-    ANSELC = ~_ANSELC_ANSELC6_MASK & ~_ANSELC_ANSELC7_MASK;
-    TRISC &= ~_TRISC_TRISC3_MASK;       /* SCK channel as output */
-    TRISC |= _TRISC_TRISC4_MASK;        /* SDI channel as input */
-    TRISC &= ~_TRISC_TRISC5_MASK;       /* SDO channel as output */
-    TRISC &= ~_TRISC_TRISC6_MASK;       /* SS1 channel as output */
-    TRISC &= ~_TRISC_TRISC7_MASK;       /* SS2 channel as output */
+    ANSELC = 0x07;      /* Set RC6 and RC7 pins as digital */
+    TRISC  = 0x17;      /* Set SCK, SDO, SS1, SS2 as output and SDI as input */
 }
 
-static void TMR2_init(void)
+static void TMR2_Initialize(void)
 {
     /* TMR2 Clock source, HFINTOSC (00011) */
-    T2CLKCON = _T2CLKCON_CS0_MASK | _T2CLKCON_CS1_MASK;
-    /* T2PSYNC Not Synchronized; T2MODE Starts at T2ON = 1 and TMR2_ers = 0; T2CKPOL Rising Edge */
-    T2HLT = 0x00; 
+    T2CLKCON = 0x03;
+    /* T2PSYNC Not Synchronized, T2MODE Software control, T2CKPOL Rising Edge */
+    T2HLT = 0x00;
     /* TMR2ON on; T2CKPS Prescaler 1:1; T2OUTPS Postscaler 1:1 */
-    T2CON |= _T0CON1_T0CS2_MASK;
-    /* Set TMR2 period, PR2 to 50us */
+    T2CON = 0x80;
+    /* Set TMR2 period, PR2 to 199 (50us) */
     T2PR = Timer2Period;
     /* Clear the TMR2 interrupt flag */
-    PIR4 &= ~_PIR4_TMR2IF_MASK;
+    PIR4bits.TMR2IF = 0;
 }
 
-static void SPI1_init(void)
+static void SPI1_Initialize(void)
 {  
     /* SSP1ADD = 1 */
-    SSP1ADD = _SSP1ADD_MSK0_MASK;
+    SSP1ADD = 0x01;
     /* Enable module, SPI Master Mode, TMR2 as clock source */
-    SSP1CON1 = _SSP1CON1_SSPEN_MASK
-             | _SSP1CON1_SSPM0_MASK
-             | _SSP1CON1_SSPM1_MASK; 
+    SSP1CON1 = 0x23;
 }
 
 static void SPI1_slave1Select(void)
 {
-    PORTC &= ~_PORTC_RC6_MASK;          /* Set SS1 pin value to LOW */
+    LATCbits.LATC6 = 0;          /* Set SS1 pin value to LOW */
 }
 
 static void SPI1_slave1Deselect(void)
 {
-    PORTC |= _PORTC_RC6_MASK;           /* Set SS1 pin value to HIGH */
+    LATCbits.LATC6 = 1;          /* Set SS1 pin value to HIGH */
 }
 
 static void SPI1_slave2Select(void)
 {
-    PORTC &= ~_PORTC_RC7_MASK;          /* Set SS2 pin value to LOW */    
+    LATCbits.LATC7 = 0;          /* Set SS2 pin value to LOW */    
 }
 
 static void SPI1_slave2Deselect(void)
 {
-    PORTC |= _PORTC_RC7_MASK;           /* Set SS2 pin value to HIGH */    
+    LATCbits.LATC7 = 1;           /* Set SS2 pin value to HIGH */    
 }
 
 static uint8_t SPI1_exchangeByte(uint8_t data)
 {
     SSP1BUF = data;
     
-    while(!(SSP1STAT & _SSP1STAT_BF_MASK))   /* Wait until data is exchanged */
+    while(!PIR3bits.SSP1IF) /* Wait until data is exchanged */
     {
         ;
-    }
+    }   
+    PIR3bits.SSP1IF = 0;
     
     return SSP1BUF;
 }
 
 int main(void)
 {
-    CLK_init();
-    PPS_init();
-    PORT_init();
-    TMR2_init();
-    SPI1_init();
+    CLK_Initialize();
+    PPS_Initialize();
+    PORT_Initialize();
+    TMR2_Initialize();
+    SPI1_Initialize();
     
     while(1)
     {
         SPI1_slave1Select();
         receiveData = SPI1_exchangeByte(writeData);
         SPI1_slave1Deselect();
+        
         SPI1_slave2Select();
         receiveData = SPI1_exchangeByte(writeData);
         SPI1_slave2Deselect();
