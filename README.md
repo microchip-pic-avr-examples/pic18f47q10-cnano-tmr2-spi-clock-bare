@@ -1,9 +1,9 @@
-<a href="https://www.microchip.com" rel="nofollow"><img src="images/MicrochipLogo.png" alt="MCHP" width="300"/></a>
+[![MCHP](images/microchip.png)](https://www.microchip.com)
 
 # PIC18F47Q10 Using TMR2 as Alternate SPI clock
 
 The PIC18F47Q10 features Three 8-bit Timers/Counters and two MSSP modules, which can be configured in SPI mode.
-In this demo, the TMR2 is used as 10kHz clock for SPI, configured as master with 2 slaves (RC6 pin ->SS1 and RC7 pin ->SS2).
+In this demo, the TMR2 is used as 10kHz clock for SPI, configured as host with 2 clients (RC6 pin ->SS1 and RC7 pin ->SS2).
 
 ## Related Documentation
 - [TB3285 - Getting Started with Timers/Counters on PIC18](https://www.microchip.com/wwwappnotes/appnotes.aspx?appnote=en1003329)
