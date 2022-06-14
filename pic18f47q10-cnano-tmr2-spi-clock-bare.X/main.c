@@ -35,10 +35,10 @@ static void PPS_Initialize(void);
 static void PORT_Initialize(void);
 static void TMR2_Initialize(void);
 static void SPI1_Initialize(void);
-static void SPI1_slave1Select(void);
-static void SPI1_slave1Deselect(void);
-static void SPI1_slave2Select(void);
-static void SPI1_slave2Deselect(void);
+static void SPI1_client1Select(void);
+static void SPI1_client1Deselect(void);
+static void SPI1_client2Select(void);
+static void SPI1_client2Deselect(void);
 static uint8_t SPI1_exchangeByte(uint8_t data);
 
 uint8_t writeData = 1;          /* Data that will be transmitted */
@@ -81,26 +81,26 @@ static void SPI1_Initialize(void)
 {  
     /* SSP1ADD = 1 */
     SSP1ADD = 0x01;
-    /* Enable module, SPI Master Mode, TMR2 as clock source */
+    /* Enable module, SPI Host Mode, TMR2 as clock source */
     SSP1CON1 = 0x23;
 }
 
-static void SPI1_slave1Select(void)
+static void SPI1_client1Select(void)
 {
     LATCbits.LATC6 = 0;          /* Set SS1 pin value to LOW */
 }
 
-static void SPI1_slave1Deselect(void)
+static void SPI1_client1Deselect(void)
 {
     LATCbits.LATC6 = 1;          /* Set SS1 pin value to HIGH */
 }
 
-static void SPI1_slave2Select(void)
+static void SPI1_client2Select(void)
 {
     LATCbits.LATC7 = 0;          /* Set SS2 pin value to LOW */    
 }
 
-static void SPI1_slave2Deselect(void)
+static void SPI1_client2Deselect(void)
 {
     LATCbits.LATC7 = 1;           /* Set SS2 pin value to HIGH */    
 }
@@ -128,12 +128,12 @@ int main(void)
     
     while(1)
     {
-        SPI1_slave1Select();
+        SPI1_client1Select();
         receiveData = SPI1_exchangeByte(writeData);
-        SPI1_slave1Deselect();
+        SPI1_client1Deselect();
         
-        SPI1_slave2Select();
+        SPI1_client2Select();
         receiveData = SPI1_exchangeByte(writeData);
-        SPI1_slave2Deselect();
+        SPI1_client2Deselect();
     }
 }
