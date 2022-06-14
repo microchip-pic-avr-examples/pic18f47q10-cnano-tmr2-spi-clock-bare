@@ -42,8 +42,8 @@
     ],
     "keywords": [
       "Getting Started",
-      "Timers/Counters",
-      "Alternate Clock",
+      "Timer",
+      "Counter",
       "Serial Communication",
       "Bare Metal"
     ],
